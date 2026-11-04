@@ -15,6 +15,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { palette } from '@/components/shop-ui';
+import * as Linking from 'expo-linking';
+
+type RegisterResponse = {
+  user: {
+    email: string;
+  };
+};
 
 export default function RegisterScreen() {
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -27,37 +34,47 @@ export default function RegisterScreen() {
   const [submissionSucceeded, setSubmissionSucceeded] = useState(false);
 
   async function handleSubmit() {
-  try {
-    const response = await fetch(
-      `${process.env.EXPO_PUBLIC_BASE_URL}/mobile/customer/register`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          first_name: firstName,
-          last_name: lastName,
-          email: email,
-          password: password,
-        }),
+    setIsSubmitting(true);
+    setFormMessage('');
+    setSubmissionSucceeded(false);
+
+    const appRedirectUrl = Linking.createURL('/verify-email', {
+      queryParams: { verified: '1' },
+    });
+
+    try {
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_BASE_URL}/mobile/patient/register`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({
+            first_name: firstName,
+            last_name: lastName,
+            email,
+            password,
+            app_redirect_url: appRedirectUrl,
+          }),
+        }
+      );
+
+      console.log('Register response:', response);
+      if (!response.ok) {
+        setFormMessage('We could not create your account. Please check your details and try again.');
+        return;
       }
-    );
 
-    const data = await response.json();
-
-    
-    if (response.ok) {
-      alert("Registration successful!");
-    } else {
-      alert('Something went wrong. Please try again later.');
+      const data: RegisterResponse = await response.json();
+      router.push({ pathname: '/verify-email', params: { email: data.user.email } });
+    } catch {
+      setFormMessage('Unable to connect. Please check your internet connection and try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-  } catch (error) {
-    // console.error("Registration error:", error);
   }
-}
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
