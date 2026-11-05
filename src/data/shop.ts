@@ -15,6 +15,8 @@ export type Product = {
   subcategory: string;
   price: number;
   image: ImageSourcePropType;
+  originalPrice?: number;
+  discount?: number;
 };
 
 export const categories: ShopCategory[] = [
@@ -51,6 +53,28 @@ export const categories: ShopCategory[] = [
 ];
 
 export const products: Product[] = [
+  {
+    id: 'limcee-vitamin-c',
+    name: 'Limcee Vitamin C',
+    description: '500 mg · 15 chewable tablets',
+    category: 'Vitamins',
+    subcategory: 'Immunity',
+    price: 24,
+    originalPrice: 30,
+    discount: 20,
+    image: require('../../assets/images/medi-category-vitamins.png'),
+  },
+  {
+    id: 'cetaphil-gentle-cleanser',
+    name: 'Cetaphil Gentle Cleanser',
+    description: 'For all skin types · 125 ml',
+    category: 'Skincare',
+    subcategory: 'Face care',
+    price: 319,
+    originalPrice: 375,
+    discount: 15,
+    image: require('../../assets/images/medi-category-skincare.png'),
+  },
   {
     id: 'pain-relief-tablets',
     name: 'Pain Relief Tablets',
