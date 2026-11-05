@@ -16,13 +16,13 @@ import { useCart } from '@/context/cart-context';
 import { formatPrice, type Product } from '@/data/shop';
 
 export const palette = {
-  navy: '#10284C',
-  teal: '#08B2B4',
-  muted: '#566986',
-  pale: '#E8F7F9',
-  border: '#E6EDF2',
+  navy: '#153A68',
+  blue: '#2563EB',
+  muted: '#526A89',
+  pale: '#EAF2FF',
+  border: '#DCE7F5',
   white: '#FFFFFF',
-  background: '#F6F9FB',
+  background: '#F4F8FF',
 };
 
 const navigation = [
@@ -222,7 +222,7 @@ export function SectionTitle({ title, action, onAction }: {
 const styles = StyleSheet.create({
   page: {
     flex: 1,
-    backgroundColor: palette.white,
+    backgroundColor: palette.background,
   },
   headerArtwork: {
     position: 'absolute',
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     width: 365,
     height: 365,
     borderRadius: 183,
-    backgroundColor: '#E4F7F9',
+    backgroundColor: '#EAF2FF',
   },
   artworkOrbAccent: {
     position: 'absolute',
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     width: 248,
     height: 248,
     borderRadius: 124,
-    backgroundColor: '#D7F3F6',
+    backgroundColor: '#DCEAFF',
     opacity: 0.78,
   },
   artworkCross: {
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     height: 25,
     left: 11,
     borderRadius: 2,
-    backgroundColor: '#80DCE0',
+    backgroundColor: '#8AB4F8',
   },
   artworkCrossHorizontal: {
     position: 'absolute',
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     height: 3,
     top: 11,
     borderRadius: 2,
-    backgroundColor: '#80DCE0',
+    backgroundColor: '#8AB4F8',
   },
   artworkDot: {
     position: 'absolute',
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: '#8DE0E2',
+    backgroundColor: '#9CC2FF',
   },
   artworkDotSmall: {
     position: 'absolute',
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 3,
-    backgroundColor: '#8DE0E2',
+    backgroundColor: '#9CC2FF',
   },
   safeArea: {
     flex: 1,
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E6F7F8',
+    backgroundColor: '#EAF2FF',
   },
   accountIcon: {
     width: 23,
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.35,
   },
   sectionAction: {
-    color: palette.teal,
+    color: palette.blue,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
     tintColor: '#65748A',
   },
   tabIconActive: {
-    tintColor: palette.teal,
+    tintColor: palette.blue,
   },
   ordersIcon: {
     width: 19,
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   ordersIconActive: {
-    borderColor: palette.teal,
+    borderColor: palette.blue,
   },
   ordersLine: {
     height: 1.5,
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   tabLabelActive: {
-    color: palette.teal,
+    color: palette.blue,
     fontWeight: '700',
   },
   tabIndicator: {
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
     width: '70%',
     height: 2,
     borderRadius: 2,
-    backgroundColor: palette.teal,
+    backgroundColor: palette.blue,
   },
   productCard: {
     width: 168,
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 100,
     borderRadius: 12,
-    backgroundColor: '#EFF9FA',
+    backgroundColor: '#F0F6FF',
   },
   productName: {
     color: palette.navy,
@@ -598,7 +598,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.pale,
   },
   addButtonText: {
-    color: palette.teal,
+    color: palette.blue,
     fontSize: 10,
     fontWeight: '800',
   },
