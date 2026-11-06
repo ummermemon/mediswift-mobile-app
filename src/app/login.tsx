@@ -1,19 +1,20 @@
-import { useAuth } from '@/context/auth-context';
 import AuthScreenLayout from '@/components/auth-screen-layout';
+import { useAuth } from '@/context/auth-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState, type ComponentProps, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Keyboard,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
-  View,
+  View
 } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
+
 
 const BRAND_BLUE = '#095BFA';
 const BRAND_PURPLE = '#7040F5';
@@ -53,6 +54,7 @@ function Field({
       <View style={styles.fieldIcon}>{children}</View>
       <TextInput
         {...inputProps}
+        autoFocus={true}
         placeholderTextColor="#7A84AF"
         style={styles.fieldInput}
       />
@@ -146,7 +148,8 @@ export default function LoginScreen() {
     }
   }, [isAuthLoading, token]);
 
-  function handleContinue() {
+  async function handleContinue() {
+    if (isSubmitting) return;
     if (!hasAcceptedTerms) {
       setFormMessage('Please agree to the Terms & Conditions and Privacy Policy to continue.');
       return;
@@ -158,73 +161,102 @@ export default function LoginScreen() {
       return;
     }
 
-    Keyboard.dismiss();
-    setFormMessage('');
-    router.push({ pathname: '/verify-otp', params: { email: normalizedEmail } });
-  }
-
-  async function handleLogin() {
-    if (!hasAcceptedTerms) {
-      setFormMessage('Please agree to the Terms & Conditions and Privacy Policy to continue.');
-      return;
-    }
-    if (!password) {
-      setFormMessage('Enter your password to log in.');
-      return;
-    }
-
+    
     setIsSubmitting(true);
     setFormMessage('');
-
     try {
       const baseUrl = process.env.EXPO_PUBLIC_BASE_URL;
-      if (!baseUrl) throw new Error('API_BASE_URL_MISSING');
-
-      const response = await fetch(`${baseUrl}/mobile/patient/login`, {
+      if (!baseUrl) {
+        throw new Error('API_BASE_URL_MISSING');
+      }
+      await SecureStore.setItemAsync('email', normalizedEmail);
+      const response = await fetch(`${baseUrl}/mobile/patient/auth/send-otp`, {
         method: 'POST',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: normalizedEmail, password }),
+        body: JSON.stringify({ email: normalizedEmail }),
       });
-      const data: unknown = await response.json();
-
-      if (!response.ok) {
-        const message =
-          typeof data === 'object' &&
-          data !== null &&
-          'message' in data &&
-          typeof data.message === 'string'
-            ? data.message
-            : 'Invalid email or password. Please try again.';
-        setFormMessage(message);
-        return;
+      
+      if (response.ok) {
+        setFormMessage('');
+        router.push({ pathname: '/verify-otp', params: { email: normalizedEmail } });  
+      }else {
+          setFormMessage('Unable to send OTP. Please try again.');
       }
-
-      if (
-        typeof data !== 'object' ||
-        data === null ||
-        !('token' in data) ||
-        typeof data.token !== 'string' ||
-        !data.token
-      ) {
-        setFormMessage('Invalid server response. Please try again.');
-        return;
-      }
-
-      await setAuthToken(data.token);
-      router.replace('/');
+      
     } catch (error) {
-      setFormMessage(
-        error instanceof Error && error.message === 'API_BASE_URL_MISSING'
-          ? 'API configuration is missing.'
-          : 'Unable to connect. Check your internet connection.'
-      );
+      setFormMessage('Something went wrong. Please try again later.');
     } finally {
       setIsSubmitting(false);
     }
+    
   }
+
+  // async function handleLogin() {
+    
+  //   if (!hasAcceptedTerms) {
+  //     setFormMessage('Please agree to the Terms & Conditions and Privacy Policy to continue.');
+  //     return;
+  //   }
+  //   if (!password) {
+  //     setFormMessage('Enter your password to log in.');
+  //     return;
+  //   }
+
+  //   setIsSubmitting(true);
+  //   setFormMessage('');
+
+  //   try {
+  //     const baseUrl = process.env.EXPO_PUBLIC_BASE_URL;
+  //     if (!baseUrl) throw new Error('API_BASE_URL_MISSING');
+
+  //     const response = await fetch(`${baseUrl}/mobile/patient/login`, {
+  //       method: 'POST',
+  //       headers: {
+  //         Accept: 'application/json',
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({ email: normalizedEmail, password }),
+  //     });
+  //     const data: unknown = await response.json();
+
+  //     if (!response.ok) {
+  //       const message =
+  //         typeof data === 'object' &&
+  //         data !== null &&
+  //         'message' in data &&
+  //         typeof data.message === 'string'
+  //           ? data.message
+  //           : 'Invalid email or password. Please try again.';
+  //       setFormMessage(message);
+  //       return;
+  //     }
+
+  //     if (
+  //       typeof data !== 'object' ||
+  //       data === null ||
+  //       !('token' in data) ||
+  //       typeof data.token !== 'string' ||
+  //       !data.token
+  //     ) {
+  //       setFormMessage('Invalid server response. Please try again.');
+  //       return;
+  //     }
+
+  //     await setAuthToken(data.token);
+  //     router.replace('/');
+  //   } catch (error) {
+  //     setFormMessage(
+  //       error instanceof Error && error.message === 'API_BASE_URL_MISSING'
+  //         ? 'API configuration is missing.'
+  //         : 'Unable to connect. Check your internet connection.'
+  //     );
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // }
 
   function handleChangeEmail() {
     setEmail(normalizedEmail);

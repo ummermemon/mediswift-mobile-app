@@ -117,7 +117,7 @@ function ProductTile({
 }
 
 export default function HomeScreen() {
-  const { token, isLoading: isAuthLoading, signOut } = useAuth();
+  const { token, signOut } = useAuth();
   const { items, itemCount, subtotal, addItem, changeQuantity } = useCart();
   const searchRef = useRef<TextInputInstance>(null);
   const [search, setSearch] = useState('');
@@ -138,9 +138,6 @@ export default function HomeScreen() {
     );
   }, [search]);
 
-  if (isAuthLoading) {
-    return <ActivityIndicator style={styles.loading} color="#075CFF" />;
-  }
   if (!token) {
     return <Redirect href="/login" />;
   }
