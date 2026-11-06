@@ -1,12 +1,15 @@
+import { useAuth } from '@/context/auth-context';
+import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
-import { Image as ExpoImage } from 'expo-image';
 import {
+  findNodeHandle,
+  ImageBackground,
   Keyboard,
   KeyboardAvoidingView,
-  ImageBackground,
   LayoutAnimation,
   Platform,
   Pressable,
@@ -14,7 +17,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  findNodeHandle,
   type TextInputInstance,
   useWindowDimensions,
   View,
@@ -34,9 +36,11 @@ export default function VerifyOtpScreen() {
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [secondsLeft, setSecondsLeft] = useState(OTP_EXPIRY_SECONDS);
   const [formMessage, setFormMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const inputRefs = useRef<(TextInputInstance | null)[]>([]);
   const scrollRef = useRef<ScrollView | null>(null);
+  const { setAuthToken } = useAuth();
   const heroHeight = keyboardVisible ? 0 : Math.min(Math.max(height * 0.35, 270), 305);
 
   useEffect(() => {
@@ -90,12 +94,48 @@ export default function VerifyOtpScreen() {
     }
   }
 
-  function handleVerify() {
+  async function handleVerify() {
     if (otp.some((digit) => !digit)) {
       setFormMessage('Enter the 4-digit code to continue.');
       return;
     }
-    setFormMessage('OTP verification is not connected yet.');
+    const otpValue = otp.join('');
+    setIsSubmitting(true);
+    setFormMessage('');
+    try {
+          const baseUrl = process.env.EXPO_PUBLIC_BASE_URL;
+          if (!baseUrl) {
+            throw new Error('API_BASE_URL_MISSING');
+          }
+          const email = await SecureStore.getItemAsync('email');
+          const response = await fetch(`${baseUrl}/mobile/patient/auth/verify-otp`, {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email: email, otp: otpValue }),
+          });
+          const data = await response.json();
+          // alert(JSON.stringify(data));
+          
+          if (response.ok) {
+            setFormMessage('');
+            if (data.is_new_user == true) {
+              alert('This is the new user');
+            }else{
+               await setAuthToken(data.token);
+              router.push({ pathname: '/', params: { email: email } });  
+            }
+          }else {
+              setFormMessage('Unable to verify OTP. Please try again.');
+          }
+          
+        } catch (error) {
+          setFormMessage('Something went wrong. Please try again later.');
+        } finally {
+          setIsSubmitting(false);
+        }
   }
 
   function handleResend() {
