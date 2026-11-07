@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from
 import {
   ActivityIndicator,
   findNodeHandle,
+  Image,
   Keyboard,
   LayoutAnimation,
   Pressable,
@@ -222,6 +223,14 @@ export default function LoginScreen() {
       isKeyboardActive={isInputActive}
       onTouchStart={handleScreenTouch}
       panelSubtitle="Enter your email address to get started"
+      centerArtwork={
+        <Image
+          source={require('../../assets/images/login-healthcare-illustration.png')}
+          style={styles.heroIllustration}
+          resizeMode="contain"
+          accessible={false}
+        />
+      }
     >
       <Field
         inputRef={inputRef}
@@ -231,7 +240,6 @@ export default function LoginScreen() {
         keyboardType="email-address"
         autoCapitalize="none"
         autoCorrect={false}
-        autoFocus={true}
         autoComplete="email"
         textContentType="emailAddress"
         returnKeyType="go"
@@ -258,6 +266,11 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  heroIllustration: {
+    width: '100%',
+    maxWidth: 360,
+    height: '100%',
+  },
   field: {
     minHeight: 46,
     borderWidth: 1.3,

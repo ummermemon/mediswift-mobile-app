@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
+import { Image as ExpoImage } from 'expo-image';
 import {
   Image,
-  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -18,6 +18,7 @@ type AuthScreenLayoutProps = {
   panelSubtitle: string;
   isKeyboardActive?: boolean;
   onTouchStart?: ComponentProps<typeof ScrollView>['onTouchStart'];
+  centerArtwork?: ReactNode;
   children: ReactNode;
 };
 
@@ -26,20 +27,29 @@ export default function AuthScreenLayout({
   panelSubtitle,
   isKeyboardActive,
   onTouchStart,
+  centerArtwork,
   children,
 }: AuthScreenLayoutProps) {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const heroHeight = isKeyboardActive
-    ? Math.min(Math.max(height * 0.25, 190), 220)
-    : Math.min(Math.max(height * 0.35, 270), 305);
+    ? Math.min(Math.max(height * 0.2, 140), 180)
+    : Math.min(Math.max(height * 0.28, 150), 230);
 
   return (
-    <ImageBackground
-      source={require('../../assets/images/login-background-waves.png')}
-      style={styles.root}
-      resizeMode="cover"
-    >
+    <View style={styles.root}>
+      <ExpoImage
+        source={require('../../assets/images/login-background-waves.png')}
+        style={styles.backgroundImage}
+        contentFit="cover"
+        contentPosition="center"
+        allowDownscaling={false}
+        loading="eager"
+        priority="high"
+        transition={0}
+        accessible={false}
+        pointerEvents="none"
+      />
       <StatusBar style="dark" />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <KeyboardAvoidingView
@@ -49,6 +59,7 @@ export default function AuthScreenLayout({
           <ScrollView
             style={styles.scrollView}
             contentContainerStyle={styles.content}
+            scrollEnabled={isKeyboardActive === undefined}
             onTouchStart={onTouchStart}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
@@ -78,6 +89,10 @@ export default function AuthScreenLayout({
               </View>
             </View>
 
+            {centerArtwork && !isKeyboardActive ? (
+              <View style={styles.centerArtwork}>{centerArtwork}</View>
+            ) : null}
+
             <View style={[
               styles.panel,
               isKeyboardActive !== undefined && styles.bottomAnchoredPanel,
@@ -99,7 +114,7 @@ export default function AuthScreenLayout({
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </ImageBackground>
+    </View>
   );
 }
 
@@ -107,6 +122,13 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#F6F7FF',
+  },
+  backgroundImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
   },
   safeArea: {
     flex: 1,
@@ -124,6 +146,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 28,
     justifyContent: 'center',
+  },
+  centerArtwork: {
+    flexGrow: 1,
+    flexShrink: 1,
+    minHeight: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
   },
   logoFrame: {
     width: 192,

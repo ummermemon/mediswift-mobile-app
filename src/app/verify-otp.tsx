@@ -7,7 +7,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import {
   findNodeHandle,
-  ImageBackground,
   Keyboard,
   KeyboardAvoidingView,
   LayoutAnimation,
@@ -158,11 +157,19 @@ export default function VerifyOtpScreen() {
   const formattedExpiry = `${String(Math.floor(secondsLeft / 60)).padStart(2, '0')}:${String(secondsLeft % 60).padStart(2, '0')}`;
 
   return (
-    <ImageBackground
-      source={require('../../assets/images/login-background-waves.png')}
-      style={styles.root}
-      resizeMode="cover"
-    >
+    <View style={styles.root}>
+      <ExpoImage
+        source={require('../../assets/images/login-background-waves.png')}
+        style={styles.backgroundImage}
+        contentFit="cover"
+        contentPosition="center"
+        allowDownscaling={false}
+        loading="eager"
+        priority="high"
+        transition={0}
+        accessible={false}
+        pointerEvents="none"
+      />
       <StatusBar style="dark" />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <KeyboardAvoidingView
@@ -314,7 +321,7 @@ export default function VerifyOtpScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </ImageBackground>
+    </View>
   );
 }
 
@@ -322,6 +329,13 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#F6F7FF',
+  },
+  backgroundImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
   },
   safeArea: {
     flex: 1,
