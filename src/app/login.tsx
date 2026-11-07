@@ -1,17 +1,21 @@
 import AuthScreenLayout from '@/components/auth-screen-layout';
 import { useAuth } from '@/context/auth-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useEffect, useState, type ComponentProps, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import {
   ActivityIndicator,
-  Alert,
+  findNodeHandle,
+  Keyboard,
+  LayoutAnimation,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
-  View
+  View,
+  type GestureResponderEvent,
+  type TextInputInstance
 } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 
@@ -28,15 +32,6 @@ function MailIcon() {
   );
 }
 
-function LockIcon() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-      <Rect x="4.3" y="10" width="15.4" height="10" rx="1.7" stroke={BRAND_PURPLE} strokeWidth="2.2" />
-      <Path d="M8 10V7.4a4 4 0 0 1 8 0V10" stroke={BRAND_PURPLE} strokeWidth="2.2" strokeLinecap="round" />
-    </Svg>
-  );
-}
-
 function ArrowIcon() {
   return (
     <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
@@ -47,14 +42,18 @@ function ArrowIcon() {
 
 function Field({
   children,
+  inputRef,
   ...inputProps
-}: ComponentProps<typeof TextInput> & { children: ReactNode }) {
+}: ComponentProps<typeof TextInput> & {
+  children: ReactNode;
+  inputRef?: ComponentProps<typeof TextInput>['ref'];
+}) {
   return (
     <View style={styles.field}>
       <View style={styles.fieldIcon}>{children}</View>
       <TextInput
+        ref={inputRef}
         {...inputProps}
-        autoFocus={true}
         placeholderTextColor="#7A84AF"
         style={styles.fieldInput}
       />
@@ -127,20 +126,13 @@ function PrimaryButton({
 }
 
 export default function LoginScreen() {
-  const { token, isLoading: isAuthLoading, setAuthToken } = useAuth();
-  const { email: emailParam, mode: modeParam } = useLocalSearchParams<{
-    email?: string | string[];
-    mode?: string | string[];
-  }>();
+  const { token, isLoading: isAuthLoading } = useAuth();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formMessage, setFormMessage] = useState('');
-  const routeEmail = Array.isArray(emailParam) ? emailParam[0] : emailParam;
-  const routeMode = Array.isArray(modeParam) ? modeParam[0] : modeParam;
-  const isPasswordStep = routeMode === 'password';
-  const normalizedEmail = routeEmail ?? email.trim();
+  const [isInputActive, setIsInputActive] = useState(false);
+  const inputRef = useRef<TextInputInstance>(null);
 
   useEffect(() => {
     if (!isAuthLoading && token) {
@@ -148,8 +140,40 @@ export default function LoginScreen() {
     }
   }, [isAuthLoading, token]);
 
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener('keyboardDidShow', () => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setIsInputActive(true);
+    });
+    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setIsInputActive(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  function updateInputActive(active: boolean) {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsInputActive(active);
+  }
+
+  function handleScreenTouch(event: GestureResponderEvent) {
+    if (
+      isInputActive &&
+      inputRef.current &&
+      findNodeHandle(inputRef.current) !== event.nativeEvent.target
+    ) {
+      Keyboard.dismiss();
+    }
+  }
+
   async function handleContinue() {
     if (isSubmitting) return;
+
     if (!hasAcceptedTerms) {
       setFormMessage('Please agree to the Terms & Conditions and Privacy Policy to continue.');
       return;
@@ -161,9 +185,9 @@ export default function LoginScreen() {
       return;
     }
 
-    
     setIsSubmitting(true);
     setFormMessage('');
+
     try {
       const baseUrl = process.env.EXPO_PUBLIC_BASE_URL;
       if (!baseUrl) {
@@ -178,142 +202,46 @@ export default function LoginScreen() {
         },
         body: JSON.stringify({ email: normalizedEmail }),
       });
-      
-      if (response.ok) {
-        setFormMessage('');
-        router.push({ pathname: '/verify-otp', params: { email: normalizedEmail } });  
-      }else {
-          setFormMessage('Unable to send OTP. Please try again.');
+
+      if (!response.ok) {
+        setFormMessage('Unable to send OTP. Please try again.');
+        return;
       }
-      
-    } catch (error) {
+
+      router.push({ pathname: '/verify-otp', params: { email: normalizedEmail } });
+    } catch {
       setFormMessage('Something went wrong. Please try again later.');
     } finally {
       setIsSubmitting(false);
     }
-    
-  }
-
-  // async function handleLogin() {
-    
-  //   if (!hasAcceptedTerms) {
-  //     setFormMessage('Please agree to the Terms & Conditions and Privacy Policy to continue.');
-  //     return;
-  //   }
-  //   if (!password) {
-  //     setFormMessage('Enter your password to log in.');
-  //     return;
-  //   }
-
-  //   setIsSubmitting(true);
-  //   setFormMessage('');
-
-  //   try {
-  //     const baseUrl = process.env.EXPO_PUBLIC_BASE_URL;
-  //     if (!baseUrl) throw new Error('API_BASE_URL_MISSING');
-
-  //     const response = await fetch(`${baseUrl}/mobile/patient/login`, {
-  //       method: 'POST',
-  //       headers: {
-  //         Accept: 'application/json',
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify({ email: normalizedEmail, password }),
-  //     });
-  //     const data: unknown = await response.json();
-
-  //     if (!response.ok) {
-  //       const message =
-  //         typeof data === 'object' &&
-  //         data !== null &&
-  //         'message' in data &&
-  //         typeof data.message === 'string'
-  //           ? data.message
-  //           : 'Invalid email or password. Please try again.';
-  //       setFormMessage(message);
-  //       return;
-  //     }
-
-  //     if (
-  //       typeof data !== 'object' ||
-  //       data === null ||
-  //       !('token' in data) ||
-  //       typeof data.token !== 'string' ||
-  //       !data.token
-  //     ) {
-  //       setFormMessage('Invalid server response. Please try again.');
-  //       return;
-  //     }
-
-  //     await setAuthToken(data.token);
-  //     router.replace('/');
-  //   } catch (error) {
-  //     setFormMessage(
-  //       error instanceof Error && error.message === 'API_BASE_URL_MISSING'
-  //         ? 'API configuration is missing.'
-  //         : 'Unable to connect. Check your internet connection.'
-  //     );
-  //   } finally {
-  //     setIsSubmitting(false);
-  //   }
-  // }
-
-  function handleChangeEmail() {
-    setEmail(normalizedEmail);
-    setPassword('');
-    setFormMessage('');
-    router.replace('/login');
   }
 
   return (
     <AuthScreenLayout
-      panelTitle={isPasswordStep ? 'Welcome back' : 'Login / Sign up'}
-      panelSubtitle={
-        isPasswordStep
-          ? 'Enter your password to continue'
-          : 'Enter your email address to get started'
-      }
+      panelTitle="Login / Sign up"
+      isKeyboardActive={isInputActive}
+      onTouchStart={handleScreenTouch}
+      panelSubtitle="Enter your email address to get started"
     >
-      {isPasswordStep ? (
-        <>
-          <View style={styles.emailSummary}>
-            <Text style={styles.emailSummaryText} numberOfLines={1}>
-              {normalizedEmail}
-            </Text>
-            <Pressable onPress={handleChangeEmail} accessibilityRole="button">
-              <Text style={styles.changeEmailText}>Change</Text>
-            </Pressable>
-          </View>
-          <Field
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Password"
-            secureTextEntry
-            autoCapitalize="none"
-            returnKeyType="done"
-            onSubmitEditing={handleLogin}
-            accessibilityLabel="Password"
-          >
-            <LockIcon />
-          </Field>
-        </>
-      ) : (
-        <Field
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Enter your email address"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-          autoComplete="email"
-          textContentType="emailAddress"
-          returnKeyType="go"
-          onSubmitEditing={handleContinue}
-          accessibilityLabel="Email address"
-        >
-          <MailIcon />
-        </Field>
-      )}
+      <Field
+        inputRef={inputRef}
+        value={email}
+        onChangeText={setEmail}
+        placeholder="Enter your email address"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoCorrect={false}
+        autoFocus={true}
+        autoComplete="email"
+        textContentType="emailAddress"
+        returnKeyType="go"
+        onFocus={() => updateInputActive(true)}
+        onBlur={() => updateInputActive(false)}
+        onSubmitEditing={handleContinue}
+        accessibilityLabel="Email address"
+      >
+        <MailIcon />
+      </Field>
 
       <TermsCheckbox
         accepted={hasAcceptedTerms}
@@ -321,20 +249,10 @@ export default function LoginScreen() {
       />
       {formMessage ? <Text accessibilityRole="alert" style={styles.formMessage}>{formMessage}</Text> : null}
       <PrimaryButton
-        label={isPasswordStep ? 'Login' : 'Continue'}
+        label="Continue"
         isSubmitting={isSubmitting}
-        onPress={isPasswordStep ? handleLogin : handleContinue}
+        onPress={handleContinue}
       />
-
-      {isPasswordStep ? (
-        <Pressable
-          style={styles.forgotButton}
-          onPress={() => Alert.alert('Forgot password', 'Password recovery is not available yet.')}
-          accessibilityRole="button"
-        >
-          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-        </Pressable>
-      ) : null}
     </AuthScreenLayout>
   );
 }
@@ -361,28 +279,6 @@ const styles = StyleSheet.create({
     color: '#29386D',
     fontSize: 14,
     paddingVertical: 9,
-  },
-  emailSummary: {
-    minHeight: 46,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#DFE3F4',
-    borderRadius: 14,
-    paddingHorizontal: 13,
-    marginBottom: 10,
-  },
-  emailSummaryText: {
-    flex: 1,
-    color: '#536087',
-    fontSize: 13,
-    marginRight: 8,
-  },
-  changeEmailText: {
-    color: BRAND_BLUE,
-    fontSize: 12,
-    fontWeight: '700',
   },
   termsRow: {
     flexDirection: 'row',
@@ -454,14 +350,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: -0.3,
-  },
-  forgotButton: {
-    alignSelf: 'flex-end',
-    paddingVertical: 8,
-  },
-  forgotPasswordText: {
-    color: BRAND_BLUE,
-    fontSize: 12.5,
-    fontWeight: '700',
   },
 });

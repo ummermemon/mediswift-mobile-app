@@ -11,22 +11,28 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 
 type AuthScreenLayoutProps = {
   panelTitle: string;
   panelSubtitle: string;
+  isKeyboardActive?: boolean;
+  onTouchStart?: ComponentProps<typeof ScrollView>['onTouchStart'];
   children: ReactNode;
 };
 
 export default function AuthScreenLayout({
   panelTitle,
   panelSubtitle,
+  isKeyboardActive,
+  onTouchStart,
   children,
 }: AuthScreenLayoutProps) {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
-  const heroHeight = Math.min(Math.max(height * 0.35, 270), 305);
+  const heroHeight = isKeyboardActive
+    ? Math.min(Math.max(height * 0.25, 190), 220)
+    : Math.min(Math.max(height * 0.35, 270), 305);
 
   return (
     <ImageBackground
@@ -38,11 +44,12 @@ export default function AuthScreenLayout({
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <KeyboardAvoidingView
           style={styles.keyboardView}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <ScrollView
             style={styles.scrollView}
             contentContainerStyle={styles.content}
+            onTouchStart={onTouchStart}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
             showsVerticalScrollIndicator={false}
@@ -62,14 +69,28 @@ export default function AuthScreenLayout({
                   Your Health,{'\n'}
                   <Text style={styles.titleAccent}>Our Priority</Text>
                 </Text>
-                <Text style={styles.subtitle}>
-                  Get medicines, consult doctors{'\n'}
-                  and more — all in one app.
-                </Text>
+                {!isKeyboardActive ? (
+                  <Text style={styles.subtitle}>
+                    Get medicines, consult doctors{'\n'}
+                    and more — all in one app.
+                  </Text>
+                ) : null}
               </View>
             </View>
 
-            <View style={[styles.panel, { paddingBottom: Math.max(insets.bottom, 18) }]}>
+            <View style={[
+              styles.panel,
+              isKeyboardActive !== undefined && styles.bottomAnchoredPanel,
+              {
+                paddingTop: isKeyboardActive ? 8 : 12,
+                paddingBottom:
+                  isKeyboardActive === undefined
+                    ? Math.max(insets.bottom, 18)
+                    : isKeyboardActive
+                      ? 12
+                      : 19,
+              },
+            ]}>
               <View style={styles.panelHandle} />
               <Text style={styles.panelTitle}>{panelTitle}</Text>
               <Text style={styles.panelSubtitle}>{panelSubtitle}</Text>
@@ -145,6 +166,10 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     backgroundColor: '#FFFFFF',
+  },
+  bottomAnchoredPanel: {
+    flex: 0,
+    marginTop: 'auto',
   },
   panelHandle: {
     width: 34,

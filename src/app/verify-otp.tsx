@@ -117,14 +117,14 @@ export default function VerifyOtpScreen() {
             body: JSON.stringify({ email: email, otp: otpValue }),
           });
           const data = await response.json();
-          // alert(JSON.stringify(data));
           
           if (response.ok) {
             setFormMessage('');
             if (data.is_new_user == true) {
               alert('This is the new user');
+              router.push({ pathname: '/register', params: { email: email } });  
             }else{
-               await setAuthToken(data.token);
+              await setAuthToken(data.token);
               router.push({ pathname: '/', params: { email: email } });  
             }
           }else {
